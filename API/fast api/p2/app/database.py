@@ -1,0 +1,23 @@
+from sqlalchemy import create_engine # creates DB connection
+from sqlalchemy.ext.declarative import declarative_base # base class for DB models
+from sqlalchemy.orm import Session,sessionmaker #creates DB sessions (transactions)
+
+
+DATABASE_URL="sqlite:///./test.db"
+
+engine=create_engine(
+    DATABASE_URL,connect_args={"check_same_thread":False}
+)
+
+
+SessionLocal=sessionmaker(autocommit=False,autoflush=False,bind=engine)
+
+Base=declarative_base()
+
+
+def get_db():
+    db=SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
