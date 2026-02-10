@@ -36,6 +36,13 @@ def submit_shipment(data:dict[str,Any])->dict:
     shipments[new_id]={"content":content,"weight":weight,"status":"placed"}
     return {"id":new_id}
 
+@app.put("/shipment")
+def shipment_update(id:int,content:str,weight:float,status:str)->dict:
+    if id not in shipments:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shipment not found")
+    shipments[id]={"content":content,"weight":weight,"status":status}
+    return {"id":id} 
+
 @app.get("/scalar",include_in_schema=False  ) # this is to induce a better API documentation interface
 def get_scalar_docs():
     return get_scalar_api_reference(openapi_url=app.openapi_url,title="Scalar API")
