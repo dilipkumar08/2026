@@ -2,17 +2,9 @@ from fastapi import FastAPI, status, HTTPException
 from scalar_fastapi import get_scalar_api_reference
 from typing import Any
 import model
-
+import database
 app = FastAPI()
-
-shipments = {
-    9: {"weight": 0.9, "content": "glassware", "status": "placed"},
-    4: {"weight": 0.4, "content": "glassware", "status": "placed"},
-    11: {"weight": 0.11, "content": "glassware", "status": "placed"},
-    6: {"weight": 0.6, "content": "glassware", "status": "placed"},
-    8: {"weight": 0.8, "content": "glassware", "status": "placed"},
-    3: {"weight": 0.3, "content": "glassware", "status": "placed"},
-}
+shipments=database.shipments
 
 
 @app.get("/shipment/latest")
@@ -45,7 +37,7 @@ def submit_shipment(Shipment: model.Shipment) -> model.Shipment:
             detail="Shipment weight exceeds the limit of 25 kg",
         )
     new_id = max(shipments.keys()) + 1
-    shipments[new_id] = {"content": Shipment.content, "weight": Shipment.weight, "status": "placed"}
+    shipments[new_id] = {"id":new_id,"content": Shipment.content, "weight": Shipment.weight, "status": "placed"}
     return {"id": new_id}
 
 
