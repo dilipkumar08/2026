@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Analyze — COdeanalyZEr</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --void: #070B14;
+    --surface: #0D1526;
+    --surface2: #111D33;
+    --cyan: #00F5FF;
+    --green: #39FF14;
+    --slate: #8892B0;
+    --snow: #E6F1FF;
+    --border: rgba(0,245,255,0.14);
+    --border2: rgba(136,146,176,0.18);
+    --error: #FF5C6C;
+  }
+
+  html, body {
+    min-height: 100%;
+    background: var(--void);
+    color: var(--snow);
+    font-family: 'Space Grotesk', sans-serif;
+    overflow-x: hidden;
+  }
+
+  canvas#bg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    opacity: 0.45;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* ── NAV ── */
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 3rem;
+    padding-bottom: 1.2rem;
+    border-bottom: 1px solid var(--border2);
+  }
+
+  .logo {
+    font-size: 1.05rem;
+    font-weight: 700;
+    text-decoration: none;
+    letter-spacing: -0.01em;
+  }
+
+  .logo .lo { color: var(--snow); }
+  .logo .hi { color: var(--cyan); }
+  .logo .accent { color: var(--green); }
+
+  .nav-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: var(--slate);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .nav-back:hover { color: var(--cyan); }
+
+  .nav-back svg { width: 14px; height: 14px; }
+
+  /* ── HEADING ── */
+  .page-head {
+    margin-bottom: 2.2rem;
+  }
+
+  .page-head h1 {
+    font-size: clamp(1.5rem, 3.5vw, 2.1rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+  }
+
+  .page-head p {
+    font-size: 0.92rem;
+    color: var(--slate);
+  }
+
+  /* ── FORM PANEL ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.4rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .panel-header span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    color: var(--slate);
+    text-transform: uppercase;
+  }
+
+  .dot-row { display: flex; gap: 5px; }
+
+  .dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--border2);
+  }
+
+  .dot.r { background: #FF5F57; }
+  .dot.y { background: #FEBC2E; }
+  .dot.g { background: #28C840; }
+
+  .panel-body { padding: 1.4rem; }
+
+  /* ── CONTROLS ROW ── */
+  .controls-row {
+    display: grid;
+    grid-template-columns: 1fr 200px;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  @media (max-width: 540px) {
+    .controls-row { grid-template-columns: 1fr; }
+  }
+
+  .field-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    color: var(--slate);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  input[type="text"], select {
+    width: 100%;
+    background: var(--void);
+    border: 1px solid var(--border2);
+    border-radius: 3px;
+    color: var(--snow);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    padding: 0.6rem 0.85rem;
+    outline: none;
+    appearance: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  input[type="text"]:focus,
+  select:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 2px rgba(0,245,255,0.1);
+  }
+
+  select option { background: #111D33; }
+
+  /* ── CODE TEXTAREA ── */
+  .code-area-wrap {
+    position: relative;
+    margin-bottom: 1.2rem;
+  }
+
+  .line-numbers {
+    position: absolute;
+    top: 0; left: 0;
+    width: 40px;
+    height: 100%;
+    background: var(--surface2);
+    border-right: 1px solid var(--border2);
+    border-radius: 3px 0 0 3px;
+    padding: 0.85rem 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    padding-right: 8px;
+    overflow: hidden;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .line-numbers span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: rgba(136,146,176,0.35);
+    line-height: 1.6em;
+    height: 1.6em;
+  }
+
+  textarea#code {
+    width: 100%;
+    min-height: 280px;
+    resize: vertical;
+    background: var(--void);
+    border: 1px solid var(--border2);
+    border-radius: 3px;
+    color: #a9b2d1;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    line-height: 1.6em;
+    padding: 0.85rem 0.85rem 0.85rem 52px;
+    outline: none;
+    tab-size: 2;
+    white-space: pre;
+    overflow-x: auto;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  textarea#code:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 2px rgba(0,245,255,0.1);
+  }
+
+  /* ── PROCESS BUTTON ── */
+  .process-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--cyan);
+    color: var(--void);
+    border: none;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.88rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 0.8rem 2rem;
+    cursor: pointer;
+    transition: opacity 0.2s, box-shadow 0.2s, transform 0.15s;
+  }
+
+  .process-btn:hover:not(:disabled) {
+    box-shadow: 0 0 20px rgba(0,245,255,0.4);
+    transform: translateY(-1px);
+  }
+
+  .process-btn:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  .process-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .process-btn .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(7,11,20,0.35);
+    border-top-color: var(--void);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: none;
+  }
+
+  .process-btn.loading .spinner { display: block; }
+  .process-btn.loading .btn-text { display: none; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── OUTPUT PANEL ── */
+  .output-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    display: none;
+    animation: fadeUp 0.4s ease;
+  }
+
+  .output-panel.visible { display: block; }
+
+  .output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.4rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .output-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    color: var(--cyan);
+    text-transform: uppercase;
+  }
+
+  .copy-btn {
+    background: none;
+    border: 0.5px solid var(--border2);
+    color: var(--slate);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    padding: 0.3rem 0.7rem;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+    text-transform: uppercase;
+  }
+
+  .copy-btn:hover { color: var(--cyan); border-color: var(--cyan); }
+
+  .output-body {
+    padding: 1.6rem 1.4rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    line-height: 1.75;
+    color: #b8c2e0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 520px;
+    overflow-y: auto;
+  }
+
+  .output-body::-webkit-scrollbar { width: 4px; }
+  .output-body::-webkit-scrollbar-track { background: transparent; }
+  .output-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* ── ERROR STATE ── */
+  .error-box {
+    background: rgba(255,92,108,0.08);
+    border: 1px solid rgba(255,92,108,0.3);
+    border-radius: 4px;
+    padding: 1rem 1.2rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: #ff8a96;
+    display: none;
+    margin-top: 1rem;
+  }
+
+  .error-box.visible { display: block; }
+
+  /* ── SKELETON LOADER ── */
+  .skeleton-wrap {
+    display: none;
+    padding: 1.6rem 1.4rem;
+  }
+
+  .skeleton-wrap.visible { display: block; }
+
+  .skel-line {
+    height: 12px;
+    background: rgba(136,146,176,0.12);
+    border-radius: 2px;
+    margin-bottom: 10px;
+    animation: shimmer 1.4s ease infinite;
+  }
+
+  .skel-line.short { width: 55%; }
+  .skel-line.med { width: 80%; }
+  .skel-line.full { width: 100%; }
+
+  @keyframes shimmer {
+    0%, 100% { opacity: 0.5; }
+    50%       { opacity: 1; }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+
+<div class="wrap">
+  <!-- NAV -->
+  <nav class="nav">
+    <a href="/" class="logo">
+      <span class="lo">CO</span><span class="hi">de</span><span class="lo">analy</span><span class="accent">ZE</span><span class="lo">r</span>
+    </a>
+    <a href="/" class="nav-back">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M13 8H3M7 4l-4 4 4 4"/>
+      </svg>
+      Back
+    </a>
+  </nav>
+
+  <!-- PAGE HEAD -->
+  <div class="page-head">
+    <h1>Analyze your code</h1>
+    <p>Paste any code snippet, pick the language, and get a full AI-powered breakdown.</p>
+  </div>
+
+  <!-- INPUT PANEL -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="dot-row">
+        <div class="dot r"></div>
+        <div class="dot y"></div>
+        <div class="dot g"></div>
+      </div>
+      <span>code input</span>
+      <span style="opacity:0; pointer-events:none;">___</span>
+    </div>
+    <div class="panel-body">
+      <div class="controls-row">
+        <div>
+          <label class="field-label" for="lang-select">Language</label>
+          <select id="lang-select">
+            <option value="python">Python</option>
+            <option value="javascript">JavaScript</option>
+            <option value="typescript">TypeScript</option>
+            <option value="java">Java</option>
+            <option value="cpp">C++</option>
+            <option value="c">C</option>
+            <option value="go">Go</option>
+            <option value="rust">Rust</option>
+            <option value="ruby">Ruby</option>
+            <option value="php">PHP</option>
+            <option value="kotlin">Kotlin</option>
+            <option value="swift">Swift</option>
+            <option value="bash">Bash / Shell</option>
+            <option value="sql">SQL</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label" for="lang-custom">Custom language name</label>
+          <input type="text" id="lang-custom" placeholder="e.g. Elixir, Scala…"/>
+        </div>
+      </div>
+
+      <div class="code-area-wrap">
+        <div class="line-numbers" id="line-numbers">
+          <span>1</span>
+        </div>
+        <textarea id="code" spellcheck="false" placeholder="// Paste your code here…"></textarea>
+      </div>
+
+      <button class="process-btn" id="process-btn" onclick="analyze()">
+        <div class="spinner"></div>
+        <span class="btn-text">Process →</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-box" id="error-box"></div>
+
+  <!-- OUTPUT PANEL -->
+  <div class="output-panel" id="output-panel">
+    <div class="output-header">
+      <span class="output-label">// Analysis result</span>
+      <button class="copy-btn" onclick="copyOutput()">Copy</button>
+    </div>
+    <!-- Skeleton while loading -->
+    <div class="skeleton-wrap" id="skeleton">
+      <div class="skel-line short"></div>
+      <div class="skel-line full"></div>
+      <div class="skel-line med"></div>
+      <div class="skel-line full"></div>
+      <div class="skel-line short"></div>
+      <div class="skel-line full"></div>
+      <div class="skel-line med"></div>
+    </div>
+    <div class="output-body" id="output-body" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- Background WebGL (same particles, dimmed) -->
+<script>
+(function() {
+  const canvas = document.getElementById('bg');
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) { canvas.style.display = 'none'; return; }
+
+  const VS = `
+    attribute vec2 a_pos;
+    attribute float a_phase;
+    attribute float a_speed;
+    uniform float u_time;
+    varying float v_alpha;
+    void main() {
+      float t = u_time * a_speed + a_phase;
+      vec2 p = a_pos;
+      p.x += sin(t * 0.7 + a_phase * 2.0) * 0.05;
+      p.y += cos(t * 0.5 + a_phase)       * 0.03;
+      gl_Position = vec4(p, 0.0, 1.0);
+      v_alpha = 0.3 + 0.5 * (0.5 + 0.5 * sin(t * 1.3));
+      gl_PointSize = 1.5 + 1.0 * (0.5 + 0.5 * sin(t * 0.9 + a_phase));
+    }
+  `;
+  const FS = `
+    precision mediump float;
+    varying float v_alpha;
+    uniform vec3 u_color;
+    void main() {
+      vec2 c = gl_PointCoord - 0.5;
+      if (dot(c,c) > 0.25) discard;
+      gl_FragColor = vec4(u_color, v_alpha);
+    }
+  `;
+
+  function compileShader(type, src) {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    return sh;
+  }
+
+  const prog = gl.createProgram();
+  gl.attachShader(prog, compileShader(gl.VERTEX_SHADER, VS));
+  gl.attachShader(prog, compileShader(gl.FRAGMENT_SHADER, FS));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  const N = 800;
+  const positions = new Float32Array(N * 2);
+  const phases    = new Float32Array(N);
+  const speeds    = new Float32Array(N);
+
+  for (let i = 0; i < N; i++) {
+    positions[i * 2]     = (Math.random() * 2 - 1);
+    positions[i * 2 + 1] = (Math.random() * 2 - 1);
+    phases[i] = Math.random() * Math.PI * 2;
+    speeds[i] = 0.1 + Math.random() * 0.2;
+  }
+
+  function makeBuf(data) {
+    const b = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, b);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+    return b;
+  }
+
+  const posBuf   = makeBuf(positions);
+  const phaseBuf = makeBuf(phases);
+  const speedBuf = makeBuf(speeds);
+
+  const aPos   = gl.getAttribLocation(prog, 'a_pos');
+  const aPhase = gl.getAttribLocation(prog, 'a_phase');
+  const aSpeed = gl.getAttribLocation(prog, 'a_speed');
+  const uTime  = gl.getUniformLocation(prog, 'u_time');
+  const uColor = gl.getUniformLocation(prog, 'u_color');
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+  const startTime = performance.now();
+
+  function draw() {
+    const t = (performance.now() - startTime) / 1000;
+    gl.clearColor(0.027, 0.043, 0.078, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    gl.uniform1f(uTime, t);
+    gl.uniform3f(uColor, 0.0, 0.96, 1.0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, phaseBuf);
+    gl.enableVertexAttribArray(aPhase);
+    gl.vertexAttribPointer(aPhase, 1, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, speedBuf);
+    gl.enableVertexAttribArray(aSpeed);
+    gl.vertexAttribPointer(aSpeed, 1, gl.FLOAT, false, 0, 0);
+    gl.drawArrays(gl.POINTS, 0, N);
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ── LINE NUMBERS ── */
+const codeEl = document.getElementById('code');
+const lineNumEl = document.getElementById('line-numbers');
+
+function updateLineNumbers() {
+  const lines = codeEl.value.split('\n').length;
+  let html = '';
+  for (let i = 1; i <= lines; i++) {
+    html += `<span>${i}</span>`;
+  }
+  lineNumEl.innerHTML = html;
+}
+
+codeEl.addEventListener('input', updateLineNumbers);
+codeEl.addEventListener('keydown', function(e) {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = this.selectionStart;
+    const end = this.selectionEnd;
+    this.value = this.value.substring(0, s) + '  ' + this.value.substring(end);
+    this.selectionStart = this.selectionEnd = s + 2;
+    updateLineNumbers();
+  }
+});
+
+/* ── ANALYZE ── */
+async function analyze() {
+  const code = document.getElementById('code').value.trim();
+  const langSelect = document.getElementById('lang-select').value;
+  const langCustom = document.getElementById('lang-custom').value.trim();
+  const language = langCustom || langSelect;
+
+  const errBox = document.getElementById('error-box');
+  const outputPanel = document.getElementById('output-panel');
+  const skeleton = document.getElementById('skeleton');
+  const outputBody = document.getElementById('output-body');
+  const btn = document.getElementById('process-btn');
+
+  errBox.classList.remove('visible');
+  outputBody.style.display = 'none';
+
+  if (!code) {
+    errBox.textContent = 'Please paste some code before processing.';
+    errBox.classList.add('visible');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.classList.add('loading');
+  outputPanel.classList.add('visible');
+  skeleton.classList.add('visible');
+
+  try {
+    const res = await fetch('/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: code, language })
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.detail || `Server error: ${res.status}`);
+    }
+
+    const data = await res.json();
+    skeleton.classList.remove('visible');
+    outputBody.style.display = 'block';
+    outputBody.textContent = data.result || data.message || JSON.stringify(data, null, 2);
+
+  } catch (err) {
+    skeleton.classList.remove('visible');
+    outputPanel.classList.remove('visible');
+    errBox.textContent = 'Error: ' + err.message;
+    errBox.classList.add('visible');
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+  }
+}
+
+function copyOutput() {
+  const text = document.getElementById('output-body').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1800);
+  });
+}
+</script>
+</body>
+</html>

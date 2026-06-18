@@ -1,0 +1,12 @@
+2026-06-18 21:17:00,613 | INFO | function: (analyze_page) at analyze.html
+2026-06-18 21:17:14,641 | INFO | function : (analyze_code) recieve process request
+2026-06-18 21:17:14,641 | INFO | function: (generate_code_info) processing code....
+2026-06-18 21:17:44,798 | INFO | function : (analyze_code) recieve process request
+2026-06-18 21:17:44,799 | INFO | function: (generate_code_info) processing code....
+2026-06-18 21:17:44,799 | INFO | function: (generate_code_info) user_input: 
+language:python
+code:
+print("i am the king")
+print(2+3)
+2026-06-18 21:17:47,254 | INFO | HTTP Request: POST https://router.huggingface.co/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-18 21:17:47,256 | INFO | function: (generate_code_info) process completed
