@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stories & Songs AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <div class="chat-container">
+
+        <div class="header">
+            🎵 Stories & Songs AI
+        </div>
+
+        <div id="messages" class="messages">
+
+            <div class="welcome">
+                <h1>Stories & Songs AI</h1>
+                <p>Ask me to create stories or songs.</p>
+            </div>
+
+        </div>
+
+        <div class="input-container">
+            <textarea
+                id="prompt"
+                placeholder="Message Stories & Songs AI..."
+                rows="1"
+            ></textarea>
+
+            <button id="sendBtn" onclick="sendMessage()">
+                ➤
+            </button>
+        </div>
+
+    </div>
+
+    <script src="/static/script.js"></script>
+
+</body>
+</html>
