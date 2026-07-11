@@ -1,0 +1,179 @@
+<div class="page">
+  <header class="hero">
+    <div class="hero-content">
+      <div class="logo-circle">📊</div>
+      <div>
+        <h1>Insightset</h1>
+        <p>Upload Excel datasets, visualize trends, and ask questions using AI.</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- Upload -->
+    <section class="card">
+      <div class="card-title">
+        <span class="card-icon">📁</span>
+        <div>
+          <h2>Upload dataset</h2>
+          <small>Excel (.xlsx / .xls)</small>
+        </div>
+      </div>
+
+      <label class="upload-box" [class.has-file]="selectedFileName()">
+        <input type="file" accept=".xlsx,.xls" (change)="onFileSelected($event)" />
+        <div class="upload-icon">☁️</div>
+        <h3>{{ selectedFileName() || 'Choose an Excel file' }}</h3>
+        <p>Drag &amp; drop or click to browse</p>
+      </label>
+
+      @if (uploadStatus()) {
+        <div class="status" [class.error]="uploadStatus().toLowerCase().includes('error')">
+          {{ uploadStatus() }}
+        </div>
+      }
+    </section>
+
+    <!-- Chart -->
+    @if (columns().length) {
+      <section class="card">
+        <div class="card-title">
+          <span class="card-icon">📈</span>
+          <div>
+            <h2>Visualize dataset</h2>
+            <small>Create interactive charts</small>
+          </div>
+        </div>
+
+        <div class="controls">
+          <select [ngModel]="chartType()" (ngModelChange)="chartType.set($event)">
+            <option value="bar">Bar</option>
+            <option value="line">Line</option>
+          </select>
+
+          <select [ngModel]="xColumn()" (ngModelChange)="xColumn.set($event)">
+            @for (col of columns(); track col) {
+              <option [value]="col">{{ col }}</option>
+            }
+          </select>
+
+          <select [ngModel]="agg()" (ngModelChange)="agg.set($event)">
+            <option value="sum">SUM</option>
+            <option value="avg">AVG</option>
+            <option value="count">COUNT</option>
+            <option value="min">MIN</option>
+            <option value="max">MAX</option>
+          </select>
+
+          <select [ngModel]="yColumn()" (ngModelChange)="yColumn.set($event)">
+            @for (col of columns(); track col) {
+              <option [value]="col">{{ col }}</option>
+            }
+          </select>
+
+          <button class="primary" (click)="generateChart()">Generate</button>
+        </div>
+
+        @if (chartError()) {
+          <div class="status error">{{ chartError() }}</div>
+        }
+
+        @if (chartValues().length) {
+          <div class="chart-card">
+            <svg viewBox="0 0 600 220" class="chart-svg">
+              @if (hasNegativeValue()) {
+                <line class="baseline" x1="20" [attr.y1]="baselineY()" x2="580" [attr.y2]="baselineY()" />
+              }
+
+              @if (chartType() === 'bar') {
+                @for (v of chartValues(); track $index) {
+                  <rect
+                    [attr.x]="$index * (560 / chartValues().length) + 20"
+                    [attr.y]="barY(v)"
+                    [attr.width]="(560 / chartValues().length) - 8"
+                    [attr.height]="barHeight(v)"
+                    rx="6"
+                    class="bar"
+                    [class.negative]="(v ?? 0) < 0"
+                  />
+                }
+              } @else {
+                <polyline [attr.points]="linePoints()" class="line" />
+                @for (v of chartValues(); track $index) {
+                  <circle
+                    [attr.cx]="$index * (chartValues().length > 1 ? 560 / (chartValues().length - 1) : 0) + 20"
+                    [attr.cy]="pointY(v)"
+                    r="5"
+                    class="dot"
+                  />
+                }
+              }
+            </svg>
+          </div>
+
+          <div class="labels">
+            @for (label of chartLabels(); track $index) {
+              <span>{{ label }}</span>
+            }
+          </div>
+        }
+      </section>
+    }
+
+    <!-- Chat -->
+    <section class="card">
+      <div class="card-title">
+        <span class="card-icon">🤖</span>
+        <div>
+          <h2>Ask AI</h2>
+          <small>Query your uploaded dataset</small>
+        </div>
+      </div>
+
+      <div class="chat-input">
+        <input
+          type="text"
+          [ngModel]="message()"
+          (ngModelChange)="message.set($event)"
+          (keydown.enter)="send()"
+          [disabled]="isLoading()"
+          placeholder="Ask anything about your dataset..."
+        />
+        <button class="primary" (click)="send()" [disabled]="isLoading()">
+          {{ isLoading() ? 'Thinking...' : 'Ask AI' }}
+        </button>
+      </div>
+
+      @if (response()) {
+        <div class="answer">
+          <div class="answer-head">
+            <div class="ai-avatar">🤖</div>
+            <div>
+              <strong>AI summary</strong>
+              <small>Generated from your dataset</small>
+            </div>
+          </div>
+
+          <div class="answer-body">{{ response() }}</div>
+
+          <div class="answer-actions">
+            @if (!feedbackSent()) {
+              <button class="icon" (click)="sendFeedback(1)">👍</button>
+              <button class="icon" (click)="sendFeedback(0)">👎</button>
+            } @else {
+              <span class="saved">✓ Feedback saved</span>
+            }
+
+            <button class="secondary" (click)="exportSummary()">Export summary</button>
+
+            @if (exportStatus()) {
+              <span class="saved">{{ exportStatus() }}</span>
+            }
+          </div>
+        </div>
+      }
+    </section>
+
+  </main>
+</div>
