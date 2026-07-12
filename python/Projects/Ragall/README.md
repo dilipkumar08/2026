@@ -1,4 +1,4 @@
-# PDF Knowledge Chat
+# RAGALL 
 
 Upload a PDF (< 1 MB), watch it get embedded with a live progress bar, then
 chat with it. Everything is session-scoped and **kept only in memory** —
